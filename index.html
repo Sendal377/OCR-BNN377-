@@ -1,604 +1,1006 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard OCR Mutasi Hub BNI Wonder</title>
-  <!-- Tesseract.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Arial, sans-serif;
-    }
 
-    body {
-      background-color: #f0f4f8;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+<meta charset="UTF-8">
 
-    .dashboard-container {
-      display: flex;
-      flex: 1;
-      height: 100vh;
-      overflow: hidden;
-    }
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
 
-    /* Panel Kiri */
-    .panel-left {
-      flex: 1;
-      background-color: #ffffff;
-      border-right: 4px solid #0d484b;
-      display: flex;
-      flex-direction: column;
-    }
+<title>Mutasi Dashboard ADB</title>
 
-    .header-left {
-      background-color: #52c480;
-      color: #000;
-      padding: 10px 15px;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid #3ca565;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-    }
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-    .header-logo {
-      height: 28px;
-      width: auto;
-      object-fit: contain;
-      vertical-align: middle;
-    }
+<style>
 
-    .upload-area {
-      padding: 12px;
-      border-bottom: 1px solid #e0e0e0;
-      background: #fafafa;
-      text-align: center;
-    }
+* {
+    box-sizing: border-box;
+}
 
-    .btn-upload {
-      background-color: #0d484b;
-      color: white;
-      padding: 6px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: bold;
-    }
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
 
-    .btn-upload:hover {
-      background-color: #125e62;
-    }
+body {
 
-    .paste-hint {
-      display: inline-block;
-      margin-top: 6px;
-      font-size: 11px;
-      background: #e2f0d9;
-      color: #0d484b;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-weight: bold;
-    }
-
-    .preview-container {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      background-color: #f7f9fa;
-    }
-
-    .preview-container img {
-      max-width: 100%;
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-
-    /* Panel Kanan */
-    .panel-right {
-      flex: 1.5;
-      background-color: #e2f0d9;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .header-right {
-      background-color: #5cd2e6;
-      color: #000000;
-      padding: 10px;
-      text-align: center;
-      font-weight: bold;
-      letter-spacing: 1px;
-      border-bottom: 1px solid #000;
-      font-size: 15px;
-    }
-
-    .status-bar {
-      padding: 8px 15px;
-      background: #e8f7f9;
-      font-size: 13px;
-      color: #000000;
-      border-bottom: 1px solid #000;
-    }
-
-    .table-container {
-      flex: 1;
-      overflow: auto;
-      padding: 15px;
-    }
-
-    .table-title {
-      font-size: 15px;
-      font-weight: bold;
-      color: #000;
-      margin-bottom: 10px;
-    }
-
-    /* Tabel Excel Klasik */
-    table.excel-table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: #fde9d9;
-      border: 1px solid #000000;
-    }
-
-    table.excel-table th {
-      background-color: #b8cce4;
-      color: #000000;
-      font-weight: bold;
-      border: 1px solid #000000;
-      padding: 6px 10px;
-      font-size: 13px;
-      text-align: center;
-    }
-
-    table.excel-table td {
-      border: 1px solid #000000;
-      padding: 6px 10px;
-      font-size: 13px;
-      color: #000000;
-      font-weight: bold;
-      background-color: #fde9d9;
-    }
-
-    .col-center { text-align: center; }
-    .col-right { text-align: right; }
-    .col-nama { text-transform: uppercase; text-align: center; }
-    @media (max-width: 900px) {
-      .dashboard-container { flex-direction: column; overflow: auto; }
-      .panel-left, .panel-right { min-height: 48vh; flex: none; }
-      .table-container { min-height: 45vh; }
-    }
-
-    .btn-upload:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="dashboard-container">
-    
-    <!-- PANEL KIRI -->
-    <div class="panel-left">
-      <div class="header-left">
-        <span>Dilarang mengeluh. Keluhan sudah penuh</span>
-        <img class="header-logo" alt="Logo" src="https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcSADBNeC-FdQhGfFjy-pupGFmxh3BbYobyrUMuGRHA0EiV4HKWB">
-      </div>
-      
-      <div class="upload-area">
-        <input type="file" id="imageInput" accept="image/*" style="display: none;">
-        <button class="btn-upload" id="uploadBtn">Upload Bukti Mutasi</button>
-        <br>
-        <span class="paste-hint">📋 Bisa Paste Gambar Langsung (Ctrl + V)</span>
-      </div>
-
-      <div class="preview-container">
-        <img id="imagePreview" src="" alt="Preview Bukti Transfer" style="display: none;">
-        <div id="placeholderText" style="color: #666; text-align: center; margin-top: 50px; font-size: 13px;">
-          <p>Belum ada gambar diunggah.</p>
-          <p style="font-size: 11px; margin-top: 4px;">Tekan <b>Ctrl + V</b> untuk Paste Gambar</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- PANEL KANAN -->
-    <div class="panel-right">
-      <div class="header-right">SILAHKAN BUKA CELANA ANDA TERLEBIH DAHULU HABIS ITU JANGAN LUPA PENCET KONTROL C</div>
-      
-      <div class="status-bar">
-        Status: <span id="status">Siap digunakan. Silakan upload atau Paste (Ctrl+V) gambar.</span>
-      </div>
-
-      <div class="table-container">
-        <div class="table-title">Tabel Detail Mutasi</div>
-        <table class="excel-table">
-          <thead>
-            <tr>
-              <th style="width: 120px;">Jam</th>
-              <th>Nama / Keterangan</th>
-              <th style="width: 160px;">Nominal (Full)</th>
-            </tr>
-          </thead>
-          <tbody id="resultBody">
-            <tr>
-              <td colspan="3" style="text-align: center; color: #555; font-weight: normal; padding: 15px;">
-                Belum ada data mutasi.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const imageInput = document.getElementById('imageInput');
-      const uploadBtn = document.getElementById('uploadBtn');
-      const imagePreview = document.getElementById('imagePreview');
-      const placeholderText = document.getElementById('placeholderText');
-      const statusText = document.getElementById('status');
-      const resultBody = document.getElementById('resultBody');
-
-      function getFormattedCurrentTime() {
-        const now = new Date();
-        const hrs = String(now.getHours()).padStart(2, '0');
-        const mins = String(now.getMinutes()).padStart(2, '0');
-        const secs = String(now.getSeconds()).padStart(2, '0');
-        return `${hrs}:${mins}:${secs}`;
-      }
-
-      function updateLiveTimes() {
-        const timeNow = getFormattedCurrentTime();
-        document.querySelectorAll('.live-time-val').forEach(el => {
-          el.textContent = timeNow;
-        });
-      }
-
-      // Jam benar-benar realtime, update setiap 1 detik.
-      updateLiveTimes();
-      setInterval(updateLiveTimes, 1000);
-
-      if (uploadBtn && imageInput) {
-        uploadBtn.addEventListener('click', () => imageInput.click());
-        imageInput.addEventListener('change', (e) => {
-          if (e.target.files[0]) handleImageFile(e.target.files[0]);
-        });
-      }
-
-      window.addEventListener('paste', (e) => {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let item of items) {
-          if (item.type.indexOf('image') !== -1) {
-            handleImageFile(item.getAsFile());
-            break;
-          }
-        }
-      });
-
-      function handleImageFile(file) {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          const dataUrl = event.target.result;
-          
-          // Render preview gambar di DOM
-          imagePreview.src = dataUrl;
-          imagePreview.style.display = 'block';
-          if (placeholderText) placeholderText.style.display = 'none';
-
-          // Buat objek Image terpisah di memori agar bebas dari error iframe/DOM
-          const tempImg = new Image();
-          tempImg.onload = function() {
-            processOCR(tempImg);
-          };
-          tempImg.onerror = function() {
-            statusText.innerText = 'Gagal memuat file gambar.';
-          };
-          tempImg.src = dataUrl;
-        };
-        reader.readAsDataURL(file);
-      }
-
-      function preprocessImageToHighContrast(imgElement) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const sourceWidth = imgElement.naturalWidth || imgElement.width || 600;
-        const sourceHeight = imgElement.naturalHeight || imgElement.height || 800;
-
-        // Upscale gambar kecil agar OCR lebih mudah membaca angka/nama.
-        const scale = Math.max(1, Math.min(2.5, 1600 / sourceWidth));
-        const width = Math.round(sourceWidth * scale);
-        const height = Math.round(sourceHeight * scale);
-
-        canvas.width = width;
-        canvas.height = height;
-
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(imgElement, 0, 0, width, height);
-        const imgData = ctx.getImageData(0, 0, width, height);
-        const data = imgData.data;
-
-        // Mengubah warna teks abu-abu pudar menjadi HITAM PEKAT
-        for (let i = 0; i < data.length; i += 4) {
-          let avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-          if (avg > 200) {
-            data[i] = 255;
-            data[i + 1] = 255;
-            data[i + 2] = 255;
-          } else {
-            data[i] = 0;
-            data[i + 1] = 0;
-            data[i + 2] = 0;
-          }
-        }
-
-        ctx.putImageData(imgData, 0, 0);
-        return canvas;
-      }
-
-      async function processOCR(imgObject) {
-        statusText.innerText = 'Membaca mutasi... Mohon tunggu.';
-        resultBody.innerHTML =
-          '<tr><td colspan="3" style="text-align:center;padding:15px;">⏳ Memproses OCR & Ekstraksi Data...</td></tr>';
-
-        let worker = null;
-
-        try {
-          const processedCanvas = preprocessImageToHighContrast(imgObject);
-
-          // Tesseract 5: worker dibuat sekali untuk proses ini, lalu selalu
-          // dihentikan di finally agar tidak menumpuk di browser.
-          worker = await Tesseract.createWorker('eng');
-          const ret = await worker.recognize(processedCanvas);
-
-          parseAndDisplayResults(ret.data.text || '');
-          statusText.innerText = 'Selesai diproses!';
-        } catch (error) {
-          console.warn('OCR utama gagal, mencoba gambar asli:', error);
-
-          try {
-            if (worker) {
-              await worker.terminate();
-              worker = null;
-            }
-
-            worker = await Tesseract.createWorker('eng');
-            const ret = await worker.recognize(imgObject);
-
-            parseAndDisplayResults(ret.data.text || '');
-            statusText.innerText = 'Selesai diproses dengan mode cadangan!';
-          } catch (errFallback) {
-            console.error(errFallback);
-            statusText.innerText = 'Gagal memproses gambar: ' + (errFallback.message || errFallback);
-            resultBody.innerHTML =
-              '<tr><td colspan="3" style="color:red;text-align:center;padding:15px;">❌ OCR gagal. Coba gambar yang lebih jelas.</td></tr>';
-          }
-        } finally {
-          if (worker) {
-            try { await worker.terminate(); } catch (e) {}
-          }
-        }
-      }
-
-      function normalizeOCRText(text) {
-        return String(text || '')
-          .replace(/\u00a0/g, ' ')
-          .replace(/[“”]/g, '"')
-          .replace(/[‘’]/g, "'")
-          .replace(/\r/g, '')
-          .split('\n')
-          .map(line => line.replace(/\s+/g, ' ').trim())
-          .filter(Boolean);
-      }
-
-      function extractAmount(str) {
-        if (!str) return null;
-
-        let cleaned = String(str)
-          .replace(/[oO]/g, '0')
-          .replace(/[lI|]/g, '1')
-          .replace(/S(?=\d)/g, '5')
-          .trim();
-
-        // Prioritaskan nominal yang memakai Rp / IDR.
-        let match = cleaned.match(
-          /(?:IDR|RP)\s*[\.:]?\s*([0-9][0-9.,\s]{2,18})/i
+    background:
+        radial-gradient(
+            circle at top left,
+            #172033 0,
+            #090b10 40%,
+            #050609 100%
         );
 
-        // Lalu format Indonesia: 10.000 / 10,000 / 1.000.000
-        if (!match) {
-          match = cleaned.match(
-            /\b\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?\b/
-          );
-        }
+    color: white;
 
-        // Terakhir, angka panjang yang kemungkinan nominal.
-        if (!match) {
-          match = cleaned.match(/\b\d{4,15}\b/);
-        }
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
-        if (!match) return null;
+    padding: 18px;
+}
 
-        const raw = match[1] || match[0];
-        const digits = raw.replace(/\D/g, '');
+/* =========================================
+   HEADER
+========================================= */
 
-        if (!digits) return null;
+.main-header {
 
-        const num = Number(digits);
+    height: 70px;
 
-        // Hindari mengambil jam, tanggal, atau nomor pendek sebagai nominal.
-        if (!Number.isFinite(num) || num < 1000 || num > 1000000000) {
-          return null;
-        }
+    display: flex;
 
-        return num.toLocaleString('en-US');
-      }
+    align-items: center;
 
-      function extractTime(str) {
-        if (!str) return null;
+    justify-content: space-between;
 
-        const match = String(str).match(/\b([01]?\d|2[0-3])[:.][0-5]\d(?:[:.][0-5]\d)?\b/);
-        if (!match) return null;
+    padding: 0 22px;
 
-        return match[0].replace(/\./g, ':');
-      }
+    margin-bottom: 18px;
 
-      function cleanOCRName(str) {
-        if (!str) return '';
+    border: 1px solid #26334d;
 
-        return str
-          .replace(/^[\s:;,!\-–—|.]+/, '')
-          .replace(/^[^A-Z0-9]+/i, '')
-          .replace(/^(?:BNI|MANDIRI|MANDIR|BCA|BRI|CIMB|PERMATA|DANAMON|DANA|OVO|GOPAY|SHOPEEPAY|SEABANK)\s*[!¡|:;,.\-–—]*\s*/i, '')
-          .replace(/\b(?:TRANSFER|TRANSAKSI|MUTASI|WONDER|STATEMENT)\b/gi, ' ')
-          .replace(/[!¡|]+(?=[A-Z0-9])/gi, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .toUpperCase();
-      }
+    border-radius: 12px;
 
-      function isLikelyName(str) {
-        if (!str || str.length < 2 || str.length > 80) return false;
-        if (/^(BNI|BCA|BRI|MANDIRI|CIMB|DANA|OVO|GOPAY|SHOPEEPAY|SEABANK)$/i.test(str)) return false;
-        if (/^(TRANSFER|TRANSAKSI|MUTASI|STATEMENT|WONDER|TOTAL|SALDO)$/i.test(str)) return false;
+    background:
+        linear-gradient(
+            135deg,
+            #101827,
+            #0b101b
+        );
 
-        // Nama biasanya mengandung huruf; jangan tampilkan baris angka murni.
-        return /[A-Z]/i.test(str);
-      }
+    box-shadow:
+        0 0 25px rgba(0,0,0,.5);
+}
 
-      function parseAndDisplayResults(rawText) {
-        const lines = normalizeOCRText(rawText);
-        const results = [];
-        const seen = new Set();
+.title {
 
-        /*
-         * OCR bank bisa menghasilkan banyak variasi:
-         * BNI - NAMA
-         * BNI: NAMA
-         * BNI NAMA
-         * Transfer BNI NAMA
-         * serta nama yang berada di baris setelah nama bank.
-         */
-        const bankPattern =
-          /(?:BNI|MANDIRI|MANDIR|BCA|BRI|CIMB|PERMATA|DANAMON|DANA|OVO|GOPAY|SHOPEEPAY|SEABANK)\b/i;
+    font-size: 21px;
 
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
+    font-weight: bold;
 
-          let name = '';
-          const bankMatch = line.match(bankPattern);
+    letter-spacing: 1px;
+}
 
-          if (bankMatch) {
-            const afterBank = line.slice(bankMatch.index + bankMatch[0].length)
-              .replace(/^[\s:;,!\-–—|.]+/, '')
-          .replace(/^[^A-Z0-9]+/i, '')
-              .trim();
+.subtitle {
 
-            if (isLikelyName(cleanOCRName(afterBank))) {
-              name = cleanOCRName(afterBank);
+    color: #8995a8;
+
+    font-size: 12px;
+
+    margin-top: 4px;
+}
+
+.connection {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    font-size: 13px;
+
+    font-weight: bold;
+}
+
+.dot {
+
+    width: 11px;
+    height: 11px;
+
+    border-radius: 50%;
+
+    background: #666;
+
+    box-shadow: 0 0 8px #666;
+}
+
+.dot.connected {
+
+    background: #00ff88;
+
+    box-shadow:
+        0 0 8px #00ff88,
+        0 0 18px #00ff88;
+}
+
+.dot.disconnected {
+
+    background: #ff3333;
+
+    box-shadow:
+        0 0 8px #ff3333,
+        0 0 18px #ff3333;
+}
+
+/* =========================================
+   LAYOUT
+========================================= */
+
+.dashboard {
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(320px, 1fr)
+        minmax(500px, 1.6fr);
+
+    gap: 18px;
+}
+
+/* =========================================
+   PANEL
+========================================= */
+
+.panel {
+
+    background:
+        linear-gradient(
+            145deg,
+            #10151f,
+            #080b10
+        );
+
+    border: 1px solid #202b3e;
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 10px 35px rgba(0,0,0,.35);
+}
+
+.panel-header {
+
+    height: 52px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 0 18px;
+
+    border-bottom: 1px solid #202b3e;
+
+    background: #0d131d;
+
+    font-weight: bold;
+}
+
+.panel-header span {
+
+    color: #f0c75e;
+}
+
+.panel-body {
+
+    padding: 16px;
+}
+
+/* =========================================
+   BUTTON
+========================================= */
+
+button {
+
+    border: 0;
+
+    border-radius: 8px;
+
+    padding: 11px 16px;
+
+    color: white;
+
+    background: #1c2637;
+
+    cursor: pointer;
+
+    font-weight: bold;
+
+    transition: .2s;
+}
+
+button:hover {
+
+    transform: translateY(-1px);
+
+    background: #26344b;
+}
+
+.btn-green {
+
+    background:
+        linear-gradient(
+            135deg,
+            #087f4e,
+            #00b56b
+        );
+}
+
+.btn-blue {
+
+    background:
+        linear-gradient(
+            135deg,
+            #1559b8,
+            #2380ff
+        );
+}
+
+.btn-red {
+
+    background:
+        linear-gradient(
+            135deg,
+            #8b1e1e,
+            #e32b2b
+        );
+}
+
+.btn-copy {
+
+    padding: 6px 10px;
+
+    font-size: 11px;
+}
+
+/* =========================================
+   CONTROL
+========================================= */
+
+.controls {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-bottom: 14px;
+}
+
+.status-box {
+
+    padding: 12px;
+
+    border-radius: 8px;
+
+    background: #090d14;
+
+    border: 1px solid #1d2838;
+
+    color: #9da8b8;
+
+    font-size: 12px;
+
+    margin-bottom: 14px;
+}
+
+/* =========================================
+   PHONE SCREEN
+========================================= */
+
+.phone-container {
+
+    width: 100%;
+
+    min-height: 450px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    background: #030405;
+
+    border: 1px solid #1d2634;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+}
+
+#phoneScreen {
+
+    max-width: 100%;
+
+    max-height: 650px;
+
+    display: none;
+
+    object-fit: contain;
+}
+
+.phone-placeholder {
+
+    text-align: center;
+
+    color: #596476;
+
+    padding: 30px;
+}
+
+.phone-placeholder .icon {
+
+    font-size: 50px;
+
+    margin-bottom: 12px;
+}
+
+/* =========================================
+   OCR
+========================================= */
+
+.ocr-progress {
+
+    width: 100%;
+
+    height: 7px;
+
+    background: #1b222d;
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    margin-top: 10px;
+}
+
+#ocrProgress {
+
+    width: 0%;
+
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            #00c878,
+            #00ff9d
+        );
+
+    transition: width .2s;
+}
+
+/* =========================================
+   TABLE
+========================================= */
+
+.table-wrapper {
+
+    overflow-x: auto;
+}
+
+table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    min-width: 650px;
+}
+
+th {
+
+    padding: 13px 12px;
+
+    text-align: left;
+
+    background: #121a27;
+
+    color: #f0c75e;
+
+    font-size: 12px;
+
+    border-bottom: 1px solid #263247;
+}
+
+td {
+
+    padding: 12px;
+
+    border-bottom: 1px solid #1b2432;
+
+    font-size: 13px;
+}
+
+tbody tr:hover {
+
+    background: #111923;
+}
+
+.amount {
+
+    font-weight: bold;
+
+    color: #62e6a2;
+
+    text-align: right;
+}
+
+.time {
+
+    color: #8ec5ff;
+
+    font-family: monospace;
+
+    font-weight: bold;
+}
+
+.empty {
+
+    text-align: center;
+
+    color: #596476;
+
+    padding: 30px;
+}
+
+/* =========================================
+   RAW OCR
+========================================= */
+
+.raw-ocr {
+
+    margin-top: 15px;
+}
+
+.raw-ocr textarea {
+
+    width: 100%;
+
+    min-height: 120px;
+
+    resize: vertical;
+
+    background: #06080c;
+
+    color: #9eaabd;
+
+    border: 1px solid #202a3a;
+
+    border-radius: 8px;
+
+    padding: 10px;
+
+    font-family: monospace;
+
+    font-size: 11px;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media(max-width: 1000px) {
+
+    .dashboard {
+
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- =======================================
+     HEADER
+======================================= -->
+
+<div class="main-header">
+
+    <div>
+
+        <div class="title">
+            MUTASI DASHBOARD
+        </div>
+
+        <div class="subtitle">
+            Android → ADB → Screenshot → OCR
+        </div>
+
+    </div>
+
+    <div class="connection">
+
+        <span
+            id="connectionDot"
+            class="dot">
+        </span>
+
+        <span id="connectionText">
+            Mengecek HP...
+        </span>
+
+    </div>
+
+</div>
+
+
+<!-- =======================================
+     DASHBOARD
+======================================= -->
+
+<div class="dashboard">
+
+
+    <!-- ===================================
+         PANEL KIRI
+    ==================================== -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <span>
+                LAYAR HP
+            </span>
+
+            <span
+                id="deviceName"
+                style="font-size:11px;color:#77849a;">
+                -
+            </span>
+
+        </div>
+
+
+        <div class="panel-body">
+
+
+            <div class="controls">
+
+                <button
+                    class="btn-blue"
+                    onclick="checkDevice()">
+
+                    🔌 Cek HP
+
+                </button>
+
+
+                <button
+                    class="btn-green"
+                    onclick="takeScreenshot()">
+
+                    📸 Screenshot
+
+                </button>
+
+
+                <button
+                    onclick="startAuto()">
+
+                    ▶ Auto
+
+                </button>
+
+
+                <button
+                    class="btn-red"
+                    onclick="stopAuto()">
+
+                    ■ Stop
+
+                </button>
+
+            </div>
+
+
+            <div class="status-box">
+
+                <div>
+                    Status:
+                    <b id="status">
+                        Menunggu...
+                    </b>
+                </div>
+
+                <div
+                    class="ocr-progress">
+
+                    <div
+                        id="ocrProgress">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="phone-container">
+
+                <img
+                    id="phoneScreen"
+                    alt="Layar HP">
+
+                <div
+                    id="phonePlaceholder"
+                    class="phone-placeholder">
+
+                    <div class="icon">
+                        📱
+                    </div>
+
+                    <div>
+                        Layar HP belum tersedia
+                    </div>
+
+                    <small>
+                        Hubungkan Android melalui USB
+                    </small>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================
+         PANEL KANAN
+    ==================================== -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <span>
+                TABEL DETAIL MUTASI
+            </span>
+
+            <button
+                class="btn-copy"
+                onclick="copyAll()">
+
+                📋 Copy Semua
+
+            </button>
+
+        </div>
+
+
+        <div class="panel-body">
+
+
+            <div class="status-box">
+
+                <span>
+                    Hasil OCR:
+                </span>
+
+                <b id="resultStatus">
+                    Belum ada data
+                </b>
+
+            </div>
+
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th style="width:120px;">
+                                JAM
+                            </th>
+
+                            <th>
+                                NAMA / KETERANGAN
+                            </th>
+
+                            <th style="width:180px;text-align:right;">
+                                NOMINAL
+                            </th>
+
+                            <th style="width:80px;">
+                                COPY
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="resultBody">
+
+                        <tr>
+
+                            <td
+                                colspan="4"
+                                class="empty">
+
+                                Belum ada data mutasi.
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <div class="raw-ocr">
+
+                <div
+                    style="
+                    margin-bottom:7px;
+                    color:#76849a;
+                    font-size:11px;
+                    ">
+
+                    HASIL OCR MENTAH
+
+                </div>
+
+                <textarea
+                    id="rawText"
+                    placeholder="Hasil OCR akan muncul di sini..."
+                    readonly>
+                </textarea>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =================================================
+   CONFIG
+================================================= */
+
+const SCREENSHOT_INTERVAL = 5000;
+
+let autoTimer = null;
+
+let ocrBusy = false;
+
+let currentRows = [];
+
+
+/* =================================================
+   ELEMENT
+================================================= */
+
+const statusEl =
+    document.getElementById("status");
+
+const resultStatus =
+    document.getElementById("resultStatus");
+
+const rawText =
+    document.getElementById("rawText");
+
+const phoneScreen =
+    document.getElementById("phoneScreen");
+
+const phonePlaceholder =
+    document.getElementById("phonePlaceholder");
+
+const connectionDot =
+    document.getElementById("connectionDot");
+
+const connectionText =
+    document.getElementById("connectionText");
+
+const deviceName =
+    document.getElementById("deviceName");
+
+const ocrProgress =
+    document.getElementById("ocrProgress");
+
+
+/* =================================================
+   STATUS
+================================================= */
+
+function setStatus(text) {
+
+    statusEl.textContent = text;
+}
+
+
+/* =================================================
+   CEK DEVICE
+================================================= */
+
+async function checkDevice() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/device?_=" +
+                Date.now()
+            );
+
+        const data =
+            await response.json();
+
+        if (data.connected) {
+
+            connectionDot.className =
+                "dot connected";
+
+            connectionText.textContent =
+                "HP CONNECTED";
+
+            if (data.devices.length) {
+
+                deviceName.textContent =
+                    data.devices[0].serial;
             }
 
-            // Jika setelah nama bank kosong, cari kandidat nama di baris berikutnya.
-            if (!name) {
-              for (let j = 1; j <= 2 && i + j < lines.length; j++) {
-                const candidate = cleanOCRName(lines[i + j]);
-                if (isLikelyName(candidate) && !extractAmount(lines[i + j]) && !extractTime(lines[i + j])) {
-                  name = candidate;
-                  break;
-                }
-              }
-            }
-          }
+            setStatus(
+                "HP berhasil terhubung."
+            );
 
-          // Pola umum "Nama : xxx" / "Nama xxx" pada hasil OCR.
-          if (!name && /(?:nama|pengirim|penerima|from|to)\b/i.test(line)) {
-            const candidate = line
-              .replace(/^(?:nama|pengirim|penerima|from|to)\s*[:\-]?\s*/i, '');
-            if (isLikelyName(candidate)) name = cleanOCRName(candidate);
-          }
-
-          if (!name) continue;
-
-          // Cari nominal di sekitar baris nama.
-          let amount = null;
-          let time = null;
-
-          for (let offset of [0, -1, 1, -2, 2, -3, 3]) {
-            const idx = i + offset;
-            if (idx < 0 || idx >= lines.length) continue;
-
-            if (!amount) amount = extractAmount(lines[idx]);
-            if (!time) time = extractTime(lines[idx]);
-
-            if (amount && time) break;
-          }
-
-          const key = `${name}|${amount || '0'}|${time || ''}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            results.push({
-              name,
-              amount: amount || '0',
-              time: time || getFormattedCurrentTime(),
-              timeIsLive: !time
-            });
-          }
+            return true;
         }
 
-        resultBody.innerHTML = '';
+        connectionDot.className =
+            "dot disconnected";
 
-        if (results.length === 0) {
-          resultBody.innerHTML =
-            '<tr><td colspan="3" style="color:red;text-align:center;padding:15px;">' +
-            '❌ Tidak ada mutasi terdeteksi. Coba gambar yang lebih jelas atau screenshot bagian transaksi.' +
-            '</td></tr>';
-          return;
+        connectionText.textContent =
+            "HP DISCONNECTED";
+
+        deviceName.textContent = "-";
+
+        setStatus(
+            "HP belum terhubung."
+        );
+
+        return false;
+
+    } catch (error) {
+
+        connectionDot.className =
+            "dot disconnected";
+
+        connectionText.textContent =
+            "ADB ERROR";
+
+        setStatus(
+            "Server ADB tidak dapat diakses."
+        );
+
+        return false;
+    }
+}
+
+
+/* =================================================
+   SCREENSHOT
+================================================= */
+
+async function takeScreenshot() {
+
+    if (ocrBusy) {
+
+        setStatus(
+            "OCR sebelumnya masih berjalan..."
+        );
+
+        return;
+    }
+
+
+    setStatus(
+        "Mengambil screenshot HP..."
+    );
+
+
+    try {
+
+        const connected =
+            await checkDevice();
+
+        if (!connected) {
+
+            return;
         }
 
-        results.forEach(item => {
-          const row = document.createElement('tr');
 
-          const tdTime = document.createElement('td');
-          tdTime.className = 'col-center';
+        const response =
+            await fetch(
+                "/api/screenshot?_=" +
+                Date.now()
+            );
 
-          if (item.timeIsLive) {
-            const liveTime = document.createElement('span');
-            liveTime.className = 'live-time-val';
-            liveTime.textContent = getFormattedCurrentTime();
-            tdTime.appendChild(liveTime);
-          } else {
-            tdTime.textContent = item.time;
-          }
 
-          const tdName = document.createElement('td');
-          tdName.className = 'col-nama';
-          tdName.textContent = item.name;
+        if (!response.ok) {
 
-          const tdAmount = document.createElement('td');
-          tdAmount.className = 'col-right';
-          tdAmount.textContent = item.amount;
+            throw new Error(
+                "Gagal mengambil screenshot"
+            );
+        }
 
-          row.append(tdTime, tdName, tdAmount);
-          resultBody.appendChild(row);
-        });
-      }
-    });
-  </script>
-</body>
-</html>
+
+        const blob =
+            await response.blob();
+
+
+        const imageURL =
+            URL.createObjectURL(blob);
+
+
+        phoneScreen.src =
+            imageURL;
+
+        phoneScreen.style.display =
+            "block";
+
+        phonePlaceholder.style.display =
+            "none";
+
+
+        setStatus(
+            "Screenshot berhasil. Memulai OCR..."
+        );
+
+
+        await runOCR(blob);
+
+    } catch (error) {
+
+        console.error(error);
+
+        setStatus(
+            "Gagal mengambil screenshot: " +
+            error.message
+        );
+    }
+}
+
+
+/* =================================================
+  
