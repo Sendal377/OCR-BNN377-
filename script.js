@@ -1,51 +1,114 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { execFile } = require("child_process");
+const { spawn } = require("child_process");
 
 const PORT = 3000;
 
-// ===============================
-// CARI ADB
-// ===============================
 const ADB = process.platform === "win32"
     ? "adb.exe"
     : "adb";
 
-// ===============================
-// JALANKAN ADB
-// ===============================
-function runADB(args, callback) {
-    execFile(ADB, args, {
-        windowsHide: true,
-        maxBuffer: 20 * 1024 * 1024
-    }, callback);
+function sendJSON(res, data, status = 200) {
+
+    res.writeHead(status, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-cache"
+    });
+
+    res.end(JSON.stringify(data));
 }
 
-// ===============================
-// SERVER
-// ===============================
-const server = http.createServer((req, res) => {
+function runADB(args) {
 
-    // ===========================
-    // HALAMAN UTAMA
-    // ===========================
-    if (req.url === "/" || req.url === "/index.html") {
+    return new Promise((resolve, reject) => {
 
-        const file = path.join(__dirname, "index.html");
+        const processADB = spawn(
+            ADB,
+            args,
+            {
+                windowsHide: true
+            }
+        );
+
+        let stdout = "";
+        let stderr = "";
+
+        processADB.stdout.on("data", data => {
+            stdout += data.toString();
+        });
+
+        processADB.stderr.on("data", data => {
+            stderr += data.toString();
+        });
+
+        processADB.on("error", error => {
+            reject(error);
+        });
+
+        processADB.on("close", code => {
+
+            if (code !== 0) {
+
+                reject(
+                    new Error(
+                        stderr || `ADB exit code ${code}`
+                    )
+                );
+
+                return;
+            }
+
+            resolve(stdout);
+        });
+    });
+}
+
+
+/* ========================================
+   SERVER
+======================================== */
+
+const server = http.createServer(async (req, res) => {
+
+    const url = new URL(
+        req.url,
+        `http://${req.headers.host}`
+    );
+
+
+    /* =====================================
+       INDEX
+    ===================================== */
+
+    if (
+        url.pathname === "/" ||
+        url.pathname === "/index.html"
+    ) {
+
+        const file =
+            path.join(__dirname, "index.html");
 
         fs.readFile(file, (err, data) => {
 
             if (err) {
+
                 res.writeHead(500, {
-                    "Content-Type": "text/plain"
+                    "Content-Type":
+                        "text/plain; charset=utf-8"
                 });
 
-                return res.end("index.html tidak ditemukan.");
+                res.end(
+                    "index.html tidak ditemukan"
+                );
+
+                return;
             }
 
             res.writeHead(200, {
-                "Content-Type": "text/html; charset=utf-8"
+                "Content-Type":
+                    "text/html; charset=utf-8"
             });
 
             res.end(data);
@@ -54,42 +117,40 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ===========================
-    // CEK DEVICE
-    // ===========================
-    if (req.url === "/api/device") {
 
-        runADB(["devices"], (error, stdout, stderr) => {
+    /* =====================================
+       DEVICE
+    ===================================== */
 
-            if (error) {
+    if (url.pathname === "/api/device") {
 
-                res.writeHead(500, {
-                    "Content-Type": "application/json"
-                });
+        try {
 
-                return res.end(JSON.stringify({
-                    connected: false,
-                    error: error.message
-                }));
-            }
+            const output =
+                await runADB([
+                    "devices"
+                ]);
 
-            const lines = stdout
-                .split(/\r?\n/)
-                .map(x => x.trim())
-                .filter(Boolean);
+            const lines =
+                output
+                    .split(/\r?\n/)
+                    .map(x => x.trim())
+                    .filter(Boolean);
 
             const devices = [];
 
             for (const line of lines) {
 
                 if (
-                    line.startsWith("List of devices") ||
-                    line.startsWith("*")
+                    line.startsWith(
+                        "List of devices"
+                    )
                 ) {
                     continue;
                 }
 
-                const parts = line.split(/\s+/);
+                const parts =
+                    line.split(/\s+/);
 
                 if (parts.length >= 2) {
 
@@ -100,56 +161,45 @@ const server = http.createServer((req, res) => {
                 }
             }
 
-            const connected = devices.some(
-                d => d.state === "device"
-            );
+            const connected =
+                devices.some(
+                    x => x.state === "device"
+                );
 
-            res.writeHead(200, {
-                "Content-Type": "application/json"
-            });
-
-            return res.end(JSON.stringify({
+            sendJSON(res, {
                 connected,
                 devices
-            }));
-        });
+            });
+
+        } catch (error) {
+
+            sendJSON(
+                res,
+                {
+                    connected: false,
+                    error: error.message
+                },
+                500
+            );
+        }
 
         return;
     }
 
-    // ===========================
-    // SCREENSHOT HP
-    // ===========================
-    if (req.url === "/api/screenshot") {
 
-        runADB(
-            ["exec-out", "screencap", "-p"],
-            (error, stdout, stderr) => {
+    /* =====================================
+       SCREENSHOT
+    ===================================== */
 
-                if (error) {
-
-                    res.writeHead(500, {
-                        "Content-Type": "application/json"
-                    });
-
-                    return res.end(JSON.stringify({
-                        error: error.message
-                    }));
-                }
-
-                // execFile stdout dapat berupa Buffer
-                // tetapi default-nya string.
-                // Karena screenshot PNG harus binary,
-                // gunakan encoding null dengan cara lain.
-            }
-        );
-
-        // Ulangi dengan spawn untuk binary PNG
-        const { spawn } = require("child_process");
+    if (url.pathname === "/api/screenshot") {
 
         const adb = spawn(
             ADB,
-            ["exec-out", "screencap", "-p"],
+            [
+                "exec-out",
+                "screencap",
+                "-p"
+            ],
             {
                 windowsHide: true
             }
@@ -157,67 +207,138 @@ const server = http.createServer((req, res) => {
 
         const chunks = [];
 
-        adb.stdout.on("data", chunk => {
-            chunks.push(chunk);
-        });
-
         let errorText = "";
 
-        adb.stderr.on("data", chunk => {
-            errorText += chunk.toString();
-        });
-
-        adb.on("close", code => {
-
-            if (code !== 0) {
-
-                res.writeHead(500, {
-                    "Content-Type": "application/json"
-                });
-
-                return res.end(JSON.stringify({
-                    error: errorText || "ADB gagal mengambil screenshot."
-                }));
+        adb.stdout.on(
+            "data",
+            chunk => {
+                chunks.push(chunk);
             }
+        );
 
-            const image = Buffer.concat(chunks);
+        adb.stderr.on(
+            "data",
+            chunk => {
+                errorText +=
+                    chunk.toString();
+            }
+        );
 
-            res.writeHead(200, {
-                "Content-Type": "image/png",
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0"
-            });
+        adb.on(
+            "error",
+            error => {
 
-            res.end(image);
-        });
+                sendJSON(
+                    res,
+                    {
+                        error:
+                            error.message
+                    },
+                    500
+                );
+            }
+        );
+
+        adb.on(
+            "close",
+            code => {
+
+                if (code !== 0) {
+
+                    sendJSON(
+                        res,
+                        {
+                            error:
+                                errorText ||
+                                "ADB gagal."
+                        },
+                        500
+                    );
+
+                    return;
+                }
+
+                const image =
+                    Buffer.concat(chunks);
+
+                res.writeHead(
+                    200,
+                    {
+                        "Content-Type":
+                            "image/png",
+
+                        "Access-Control-Allow-Origin":
+                            "*",
+
+                        "Cache-Control":
+                            "no-cache, no-store, must-revalidate",
+
+                        "Pragma":
+                            "no-cache",
+
+                        "Expires":
+                            "0"
+                    }
+                );
+
+                res.end(image);
+            }
+        );
 
         return;
     }
 
-    // ===========================
-    // UNKNOWN
-    // ===========================
+
+    /* =====================================
+       404
+    ===================================== */
+
     res.writeHead(404, {
-        "Content-Type": "text/plain"
+        "Content-Type":
+            "text/plain; charset=utf-8"
     });
 
-    res.end("404 - Not Found");
+    res.end("404 Not Found");
 });
 
-server.listen(PORT, () => {
 
-    console.log("");
-    console.log("======================================");
-    console.log("   MUTASI DASHBOARD + ADB");
-    console.log("======================================");
-    console.log("");
-    console.log(`Dashboard: http://localhost:${PORT}`);
-    console.log("");
-    console.log("Pastikan:");
-    console.log("1. ADB sudah terinstall");
-    console.log("2. HP tersambung USB");
-    console.log("3. USB Debugging aktif");
-    console.log("4. Izinkan koneksi USB Debugging di HP");
-    console.log("");
-});
+server.listen(
+    PORT,
+    "127.0.0.1",
+    () => {
+
+        console.log("");
+        console.log(
+            "======================================"
+        );
+
+        console.log(
+            "      MUTASI ADB BRIDGE"
+        );
+
+        console.log(
+            "======================================"
+        );
+
+        console.log("");
+
+        console.log(
+            `Dashboard: http://localhost:${PORT}`
+        );
+
+        console.log("");
+
+        console.log(
+            "ADB:",
+            ADB
+        );
+
+        console.log("");
+
+        console.log(
+            "Tekan CTRL+C untuk berhenti."
+        );
+
+        console.log("");
+    }
+);
